@@ -1,0 +1,244 @@
+#!/bin/bash
+
+echo "ThinkPad Fan Speed Control :::: Thinkfan Utility"
+
+# NEWT_COLORS color profile to match the ThinkPad brand color theme (black, red, white, gray)
+NEWT_COLORS='
+root=black,white
+border=black,red
+window=black,white
+shadow=black,gray
+title=white,black
+button=white,red
+actbutton=red,white
+checkbox=white,black
+actcheckbox=red,white
+entry=black,white
+label=white,black
+listbox=white,black
+actlistbox=white,gray
+textbox=black,white
+acttextbox=red,white
+helpline=white,black
+roottext=white,black
+emptyscale=black,white
+fullscale=red,black
+disentry=gray,white
+compactbutton=black,white
+actsellistbox=black,red
+sellistbox=gray,white'
+
+export NEWT_COLORS
+
+# BASH SCRIPT TO MANUALLY CONTROL FAN SPEEDS ON THINKPAD LAPTOPS WITH THE THINKFAN UTILITY
+# WRITTEN BY: LINUX-OASIS
+
+# THIS SCRIPT IS DESIGNED TO BE USED WITH THINKPAD LAPTOPS
+
+# Check for dependencies: thinkfan, lm-sensors, and sudo
+for PACKAGE in thinkfan lm-sensors; do
+    if ! apt list --installed $PACKAGE 2>/dev/null | grep -w $PACKAGE >/dev/null; then
+        echo "Dependency $PACKAGE is NOT installed .. installing"
+        sudo apt update
+        sudo apt install -y $PACKAGE
+
+        if ! apt list --installed $PACKAGE 2>/dev/null | grep -w $PACKAGE >/dev/null; then
+            echo "Possibly didn't install dependency $PACKAGE .. exiting"
+            exit 1
+        fi
+    fi
+done
+
+# Re-check if the dependencies are installed one more time
+if [ ! -x /usr/sbin/thinkfan ]; then
+    echo "ERROR: thinkfan is not installed. Please install thinkfan."
+    exit 1
+fi
+
+if [ ! -x /usr/bin/sensors ]; then
+    echo "ERROR: lm-sensors is not installed. Please install lm-sensors."
+    exit 1
+fi
+
+if [ ! -x /usr/bin/sudo ]; then
+    echo "ERROR: sudo is not installed. Please install sudo."
+    exit 1
+fi
+
+# Check if the computer is a ThinkPad
+sudo dmidecode -t system | grep "Version: ThinkPad" |
+    sed 's/Version: ThinkPad .*/Version: ThinkPad/g' | sed 's/^[[:space:]]*//g' 2>/dev/null >/tmp/ThinkPadCheck.tmp
+
+# Linux BASH color escape codes
+_RED_ESC_CODE='\033[0;31m'
+_GREEN_ESC_CODE='\033[0;32m'
+_NC_ESC_CODE='\033[0m' # No Color / reset color
+_BLUE_ESC_CODE='\033[0;34m'
+_BOLD_TEXT_ESC_CODE='\033[1m'
+_WHITE_ESC_CODE='\033[1;37m'
+_BOLD_BLUE_TEXT_ESC_CODE='\033[1;34m'
+_BOLD_WHITE_TEXT_ESC_CODE='\033[1;37m'
+_BOLD_WHITE_BLUE_BACKGROUND_ESC_CODE='\033[1;37;44m'
+
+# Verify if the computer is a ThinkPad
+if [ -d /proc/acpi/ibm ] && [[ "$(tr -d '\n' </tmp/ThinkPadCheck.tmp)" == "Version: ThinkPad" ]]; then
+    echo -e "${_BOLD_BLUE_TEXT_ESC_CODE} This computer is a ThinkPad. :D :D :D ${_NC_ESC_CODE}"
+    echo -e "${_GREEN_ESC_CODE} This computer is a ThinkPad. :D :D :D ${_NC_ESC_CODE}"
+    echo -e "${_BOLD_WHITE_TEXT_ESC_CODE} This computer is a ThinkPad. :D :D :D ${_NC_ESC_CODE}"
+    echo -e "${_GREEN_ESC_CODE} This computer is a ThinkPad. :D :D :D ${_NC_ESC_CODE}"
+else
+    echo "ERROR: This computer is not a ThinkPad. Exiting."
+    exit 1
+fi
+
+# Check if the thinkpad_acpi.conf file exists and contains the required line
+if [ ! -f /usr/lib/modprobe.d/thinkpad_acpi.conf ] || ! grep -q "options thinkpad_acpi fan_control=1" /usr/lib/modprobe.d/thinkpad_acpi.conf; then
+
+    echo -e "\e[3;101m \n" "FILE: /usr/lib/modprobe.d/thinkpad_acpi.conf does not exist or does not contain the line 'options thinkpad_acpi fan_control=1'. \e[0m"
+    echo -e "\e[3;101m \n" "Adding the line: 'options thinkpad_acpi fan_control=1' to /usr/lib/modprobe.d/thinkpad_acpi.conf and reboot. \n \e[0m"
+
+    echo "options thinkpad_acpi fan_control=1" | sudo tee /usr/lib/modprobe.d/thinkpad_acpi.conf
+    sudo update-initramfs -u
+
+    # Load the module
+    sudo modprobe thinkpad_acpi
+
+    echo -e "\e[4;106m \n You must reboot your computer for the changes to take effect :D :D :D  \n \e[0m"
+fi
+
+# Load the module
+sudo modprobe thinkpad_acpi
+
+while true; do
+
+    _CURRENT_THINKFAN_LEVEL_BANNER_DISPLAY=$(cat /proc/acpi/ibm/fan | grep ^level: | cut -d: -f2 | tr -d '[:space:]')
+    if [ -n "$_CURRENT_THINKFAN_LEVEL_BANNER_DISPLAY" ]; then
+        _AT_GLANCE_SHOW_CURRENT_THINKFAN_LEVEL=$(echo -n "[[Current Level: $_CURRENT_THINKFAN_LEVEL_BANNER_DISPLAY]]")
+    fi
+
+    # Display the fan speed selection menu
+    cat <<EOF | tee /tmp/ThinkPadFanSpeedControl_BANNER_INFO.tmp
+ThinkPad Fan Speed Control   
+Select Fan Speed Level         $_AT_GLANCE_SHOW_CURRENT_THINKFAN_LEVEL
+auto: default - automatic, the fan RPM is controlled by the BIOS
+0: Fan Off                    1: Fan Speed ~2665 rpm
+2: Fan Speed [low] ~2870 rpm  3: Fan Speed ~3020 rpm
+4: Fan Speed [med] ~3175 rpm  5: Fan Speed ~3575 rpm
+6: Fan Speed ~3980 rpm        7: Fan Speed ~3980 rpm
+full-speed/disengaged: maximum fan speed; controller does not monitor the fan speed
+EOF
+
+    _FAN_SPEED_THINKPAD=$(whiptail --fullbuttons --scrolltext --title "Select ThinkPad Fan Speed Control" --menu "$(cat /tmp/ThinkPadFanSpeedControl_BANNER_INFO.tmp)" 0 0 12 \
+        "auto" "Auto: ThinkPad Fan Speed Control" \
+        "0" "Level 0: Fan Off" \
+        "1" "Level 1: Fan Speed ~2665 rpm" \
+        "2" "Level 2: Fan Speed ~2870 rpm" \
+        "3" "Level 3: Fan Speed ~3020 rpm" \
+        "4" "Level 4: Fan Speed ~3175 rpm" \
+        "5" "Level 5: Fan Speed ~3575 rpm" \
+        "6" "Level 6: Fan Speed ~3980 rpm" \
+        "7" "Level 7: Fan Speed ~3980 rpm" \
+        "full-speed" "Controller disengaged ~5290 rpm" \
+        "disengaged" "Controller disengaged ~5290 rpm" \
+        "[WATCH FANSPEED]" "watch thinkpad fanspeed" 3>&1 1>&2 2>&3)
+
+    if [ -z "$_FAN_SPEED_THINKPAD" ]; then
+        echo "You chose Cancel."
+        echo "User Aborted ThinkPad Fan Speed Control.... Exiting"
+        exit 1
+    else
+        echo "You chose: $_FAN_SPEED_THINKPAD"
+    fi
+
+    if [ "$_FAN_SPEED_THINKPAD" == "[WATCH FANSPEED]" ]; then
+        echo "Watching ThinkPad Fan Speed"
+        watch -n 1 -d "cat /proc/acpi/ibm/fan"
+        exit 0
+    else
+
+        echo -e "Selected Fan Speed Level: [ ${_BOLD_WHITE_BLUE_BACKGROUND_ESC_CODE} level $_FAN_SPEED_THINKPAD ${_NC_ESC_CODE} ]"
+
+        # Sanitize the fan speed level
+        _FAN_SPEED_THINKPAD_SANITIZED=$(echo "$_FAN_SPEED_THINKPAD" | tr -d '[:space:]')
+
+        # Set the fan speed level
+        echo "Setting ThinkPad Fan Speed Level: $_FAN_SPEED_THINKPAD_SANITIZED"
+        sudo su -c "echo level $_FAN_SPEED_THINKPAD_SANITIZED > /proc/acpi/ibm/fan"
+
+        # Enable thinkfan service
+        sudo systemctl enable thinkfan.service 2>/dev/null
+        sudo service thinkfan start 2>/dev/null
+        sudo systemctl start thinkfan.service 2>/dev/null
+
+        # Final message
+        echo -e "ThinkPad Fan Speed Control: [${_BOLD_WHITE_BLUE_BACKGROUND_ESC_CODE} level $_FAN_SPEED_THINKPAD_SANITIZED ${_NC_ESC_CODE}]"
+
+        # if file /proc/acpi/ibm/fan does not exist, then report it, advise that a reboot is needed and exit
+        if [ ! -f /proc/acpi/ibm/fan ]; then
+            echo -e "\e[3;101m \n" "ERROR: /proc/acpi/ibm/fan does not exist. You must reboot your computer for the changes to take effect." "\e[0m"
+            read -p "Press ENTER to continue ::"
+        fi
+
+        echo "ThinkPad Fan Speed Control: Complete. :D :D :D"
+
+    # END OF SCRIPT
+    fi
+
+    #make permanent? with systemd service
+    whiptail --fullbuttons --title "[MAKE PERMANENT] ThinkPad Fan Speed Control" --yes-button "No" --no-button "Yes" --yesno "Do you want to make the ThinkPad Fan Speed Control [PERMANENT] with a systemd service?" 0 0
+
+    if [ $? -ne 0 ]; then
+        echo "You chose Yes. Making ThinkPad Fan Speed Control Permanent with a systemd service."
+
+        sudo mkdir -p /etc/systemd/system/CUST-SYSD
+        sudo chmod -R 777 /etc/systemd/system/CUST-SYSD
+
+        ### To Create the systemd service file without displaying the output, redirect the output to /dev/null
+        ### Example: cat <<EOF | sudo tee /etc/systemd/system/thinkpad-fan-speed-control-permanent-setting.service >/dev/null
+
+        # Create the thinkpad-fan-speed-control.sh script
+        cat <<EOF | sudo tee /etc/systemd/system/CUST-SYSD/thinkpad-fan-speed-control-permanent-setting.sh
+#!/bin/bash
+
+    sudo su -c "echo level $_FAN_SPEED_THINKPAD_SANITIZED > /proc/acpi/ibm/fan"
+
+
+EOF
+
+        # Make the thinkpad-fan-speed-control.sh script executable
+        sudo chmod 777 /etc/systemd/system/CUST-SYSD/thinkpad-fan-speed-control-permanent-setting.sh
+
+        # Create the systemd service file
+        cat <<EOF | sudo tee /etc/systemd/system/thinkpad-fan-speed-control-permanent-setting.service >/dev/null
+[Unit]
+Description=ThinkPad Fan Speed Control Permanent Setting
+After=multi-user.target 
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /etc/systemd/system/CUST-SYSD/thinkpad-fan-speed-control-permanent-setting.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+        # Reload the systemd daemon
+        sudo systemctl daemon-reload
+
+        # Enable the systemd service
+        sudo systemctl enable thinkpad-fan-speed-control-permanent-setting.service
+
+        # Start the systemd service
+        sudo systemctl start thinkpad-fan-speed-control-permanent-setting.service
+
+        # Final message PERMANENT setting with systemd service
+        echo -e "ThinkPad Fan Speed Control: [${_BOLD_WHITE_BLUE_BACKGROUND_ESC_CODE} level $_FAN_SPEED_THINKPAD_SANITIZED ${_NC_ESC_CODE}]"
+        echo -e "ThinkPad Fan Speed Control is now [ ${_BOLD_WHITE_BLUE_BACKGROUND_ESC_CODE} PERMANENT ${_NC_ESC_CODE} ] with a systemd service.\n"
+        echo "ThinkPad Fan Speed Control: Complete. :D :D :D"
+    else
+        echo -e "You chose No. ThinkPad Fan Speed Control is [ ${_BOLD_WHITE_BLUE_BACKGROUND_ESC_CODE} NOT ${_NC_ESC_CODE} ] permanent."
+        echo "ThinkPad Fan Speed Control: Complete. :D :D :D"
+    fi
+
+done
+unset NEWT_COLORS
