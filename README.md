@@ -24,7 +24,6 @@ Perfect for power users, sysadmins, and anyone who wants more control, perfrmanc
 - ⚡ **Control Fan Modes**: Set manual, automatic, or custom fan speed profiles.
 - 🖥️ **ThinkPad Specific**: Optimized for Lenovo ThinkPad models on Linux.
 - 🛠️ **Easy CLI Usage**: No GUI, no bloat—just pure terminal power.
-- 🏁 **Boot-Time Fan Level**: Start your ThinkPad with a pre-set fan speed (like a server!) for instant cooling, noise, or performance.
 - 🔒 **Open Source (GPLv3)**: Fork, hack, and contribute freely!
 
 ---
@@ -37,11 +36,11 @@ git clone https://github.com/LINUX-OASIS/FANSPEED-CONTROL-THINKPAD-CLI.git
 cd FANSPEED-CONTROL-THINKPAD-CLI
 
 # Make the script executable
-chmod +x fanspeed.sh
+chmod +x custom-FANSPEED-CONTROL-THINKPAD
 
 # Run with sudo (required for hardware control)
-sudo ./fanspeed.sh status
-sudo ./fanspeed.sh set 3500    # Set fan speed to 3500 RPM
+sudo ./custom-FANSPEED-CONTROL-THINKPAD status
+sudo ./custom-FANSPEED-CONTROL-THINKPAD set 3500    # Set fan speed to 3500 RPM
 ```
 
 ---
@@ -63,39 +62,13 @@ sudo apt install thinkfan lm-sensors acpi bash
 
 ---
 
-## ⚡ Boot-Time Fan Control
-
-Want your ThinkPad to behave like a server, starting with fans at a specified RPM?  
-**FANSPEED-CONTROL-THINKPAD-CLI** provides a feature to set your desired fan speed at boot.  
-You can enable this by adding a systemd service or placing the CLI command in your boot scripts.
-
-**Example systemd service:**
-```ini
-[Unit]
-Description=Set ThinkPad Fan Speed at Boot
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/fanspeed.sh set 3500
-
-[Install]
-WantedBy=multi-user.target
-```
-Enable with:
-```bash
-sudo systemctl enable fanspeed-at-boot.service
-```
-
----
-
 ## 📖 Usage
 
 ```bash
-./fanspeed.sh status        # Show current fan speed and temperatures
-./fanspeed.sh set <rpm>     # Set fan speed manually
-./fanspeed.sh auto          # Enable automatic fan control
-./fanspeed.sh boot <rpm>    # Configure boot-time fan speed
-./fanspeed.sh help          # Show all commands
+./custom-FANSPEED-CONTROL-THINKPAD status        # Show current fan speed and temperatures
+./custom-FANSPEED-CONTROL-THINKPAD set <rpm>     # Set fan speed manually
+./custom-FANSPEED-CONTROL-THINKPAD auto          # Enable automatic fan control
+./custom-FANSPEED-CONTROL-THINKPAD help          # Show all commands
 ```
 
 ---
