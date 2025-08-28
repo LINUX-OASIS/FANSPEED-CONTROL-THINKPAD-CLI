@@ -13,8 +13,8 @@
 
 ## 💡 Overview
 
-**FANSPEED-CONTROL-THINKPAD-CLI** is a blazing-fast 🏎️, no-nonsense CLI tool for controlling and monitoring ThinkPad fan speed on Linux systems.  
-Perfect for power users, sysadmins, and anyone who wants more control or silence from their beloved ThinkPad!
+**FANSPEED-CONTROL-THINKPAD-CLI** a no-nonsense CLI tool for controlling and monitoring ThinkPad fan speed on Linux systems.  
+Perfect for power users, sysadmins, and anyone who wants more control, perfrmance or silence from their beloved ThinkPad!
 
 ---
 
