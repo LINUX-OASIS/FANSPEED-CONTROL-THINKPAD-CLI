@@ -47,6 +47,20 @@ It’s about **convenience + accessibility**. Power users still get full control
 
 ---
 
+## Tested Linux Distributions
+
+This tool has been tested and verified to work on the following Linux distributions:
+
+- **Debian**
+- **Ubuntu**
+- **Linux Mint**
+
+> **Note:** The tool is primarily tested on Debian and Debian derivatives. It is expected to work correctly on any Linux distribution that uses the **APT package manager**, including other Debian-based distros.
+
+If you encounter issues on other APT-based distributions, please report them!
+
+---
+
 ## 🚀 Quickstart
 
 ```bash
