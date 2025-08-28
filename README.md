@@ -39,8 +39,8 @@ cd FANSPEED-CONTROL-THINKPAD-CLI
 chmod +x custom-FANSPEED-CONTROL-THINKPAD
 
 # Run with sudo (required for hardware control)
-sudo ./custom-FANSPEED-CONTROL-THINKPAD status
-sudo ./custom-FANSPEED-CONTROL-THINKPAD set 3500    # Set fan speed to 3500 RPM
+sudo ./custom-FANSPEED-CONTROL-THINKPAD
+sudo ./custom-FANSPEED-CONTROL-THINKPAD
 ```
 
 ---
@@ -65,10 +65,7 @@ sudo apt install thinkfan lm-sensors acpi bash
 ## 📖 Usage
 
 ```bash
-./custom-FANSPEED-CONTROL-THINKPAD status        # Show current fan speed and temperatures
-./custom-FANSPEED-CONTROL-THINKPAD set <rpm>     # Set fan speed manually
-./custom-FANSPEED-CONTROL-THINKPAD auto          # Enable automatic fan control
-./custom-FANSPEED-CONTROL-THINKPAD help          # Show all commands
+./custom-FANSPEED-CONTROL-THINKPAD
 ```
 
 ---
